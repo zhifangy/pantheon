@@ -1,0 +1,24 @@
+---
+AG:
+  {
+    AtlasID: MMP1,
+    AtlasSpace: fsLR,
+    ROIType: Surface,
+    IndexL: [323, 330, 331],
+    IndexR: [143, 150, 151],
+    LabelL: [L_PGp, L_PGi, L_PGs],
+    LabelR: [R_PGp, R_PGi, R_PGs],
+    Note: "",
+  }
+
+HPC:
+  {
+    AtlasID: Template_ASeg,
+    AtlasSpace: MNI152NLin6Asym,
+    ROIType: Volume,
+    IndexL: [17],
+    IndexR: [53],
+    LabelL: [HIPPOCAMPUS_LEFT],
+    LabelR: [HIPPOCAMPUS_RIGHT],
+    Note: "",
+  }

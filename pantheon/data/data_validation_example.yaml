@@ -1,0 +1,13 @@
+task:
+  task-encoding:
+    run_list: [run-1, run-2] # a list indicates all possible runs
+    exclude:
+      sub-023: [run-1] # map subject and runs need to be excluded
+  task-retrieval:
+    run_list: [run-1, run-2, run-3]
+    exclude: {}
+  task-movie:
+    run_list: [] # an empty list for task with only one scan
+    exclude:
+      sub-005: [] # leave the run list empty
+exclude_subject: [sub-001]

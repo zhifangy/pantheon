@@ -1,0 +1,20 @@
+---
+fsLR:
+  MMP1:
+    L: data/external/atlas/MMP1/S1200_space-fsLR_den-32k_desc-MMP1_dseg.dlabel.nii
+    R: data/external/atlas/MMP1/S1200_space-fsLR_den-32k_desc-MMP1_dseg.dlabel.nii
+  MMP1_Subcortical:
+    L: data/external/atlas/MMP1/S1200_space-MNI152NLin2009cAsym_res-02_desc-MMP1_dseg.nii.gz
+    R: data/external/atlas/MMP1/S1200_space-MNI152NLin2009cAsym_res-02_desc-MMP1_dseg.nii.gz
+fsaverage:
+  Brainnetome:
+    L: data/external/atlas/Brainnetome/fsaverage.L.BN_Atlas.32k_fs_LR.label.gii
+    R: data/external/atlas/Brainnetome/fsaverage.R.BN_Atlas.32k_fs_LR.label.gii
+MNI152NLin6Asym:
+  Template_ASeg:
+    L: data/external/atlas/Template_ASeg/MNI_space-MNI152NLin6Asym_res-2_desc-Subcortical_dseg.nii.gz
+    R: data/external/atlas/Template_ASeg/MNI_space-MNI152NLin6Asym_res-2_desc-Subcortical_dseg.nii.gz
+T1w:
+  Custom:
+    L: data/external/atlas/Custom/{sub_id}/{sub_id}_hemi-L.label.gii
+    R: data/external/atlas/Custom/{sub_id}/{sub_id}_hemi-R.label.gii
