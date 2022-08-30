@@ -86,7 +86,6 @@ def convert_freesurfer_geometry_surface(
         fname = fname.replace(f"space-fsnative", f"space-fsaverage")
     out_file = Path(out_dir).joinpath(fname)
     print(f"Converting {surf_file} ...", flush=True)
-    run_cmd(f"mris_convert --to-scanner --remove-vol-geom {surf_file} {out_file}")
     # Note:
     # the conversion uses both --to-scanner and --remove-vol-geom option
     # --to-scanner is used for applying CRAS transformation matrix to
@@ -118,6 +117,10 @@ def convert_freesurfer_geometry_surface(
     # https://github.com/nipreps/smriprep/pull/295
     # Connectome Project pipeline ('AlgorithmSurfaceApplyAffine' and
     # 'FreeSurfer2CaretConvertAndRegisterNonlinear')
+    if "sphere" not in surf_id:
+        run_cmd(f"mris_convert --to-scanner --remove-vol-geom {surf_file} {out_file}")
+    else:
+        run_cmd(f"mris_convert {surf_file} {out_file}")
 
     # Set GIFTI metadata
     set_structure_cmd = (
