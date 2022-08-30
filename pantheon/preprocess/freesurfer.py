@@ -19,7 +19,6 @@ def convert_freesurfer_geometry_surface(
     surf_id: str,
     fs_dir: PathLike,
     out_dir: PathLike,
-    adjust_cras: bool = True,
     xfm_file: Optional[PathLike] = None,
     debug: bool = False,
 ) -> Path:
@@ -31,8 +30,6 @@ def convert_freesurfer_geometry_surface(
         surf_id: Surface name in FreeSurfer's outputs.
         fs_dir: Subject's FreeSurfer output directory.
         out_dir: Directory to store output file.
-        adjust_cras: If true, adjust the cras offset which FreeSurfer
-            stores in file's header.
         xfm_file: An ITK format affine transformation matrix file. If it
             is given, applying it to the surface file. Optional.
         debug: If true, output intermediate files to out_dir.
@@ -89,9 +86,40 @@ def convert_freesurfer_geometry_surface(
         fname = fname.replace(f"space-fsnative", f"space-fsaverage")
     out_file = Path(out_dir).joinpath(fname)
     print(f"Converting {surf_file} ...", flush=True)
+    run_cmd(f"mris_convert --to-scanner --remove-vol-geom {surf_file} {out_file}")
+    # Note:
+    # the conversion uses both --to-scanner and --remove-vol-geom option
+    # --to-scanner is used for applying CRAS transformation matrix to
+    # points of the surface
+    # --remove-vol-geom is used to remove CRAS(VolGeom) information from
+    # GIFTI metadata.
+    # If using --to-scanner without --remove-vol-geom, the surface
+    # location will be incorrect in softwares support reading VolGeom
+    # information, e.g., freeview.
+    # If not using --to-scanner at all, the surface location will be
+    # incorrect in softwares like workbench (not support VolGeom).
+    # Both fMRIprep and HCPpipeline generates correct surfaces without
+    # CRAS in the metadata.
+    # See note from smriprep:
+    # FreeSurfer includes volume geometry metadata that serves as an
+    # affine transformation to apply to coordinates, which is respected
+    # by FreeSurfer tools, but not other tools, in particular the
+    # Connectome Workbench. This normalization thus removes the volume
+    # geometry, to ensure consistent interpretation of the coordinate
+    # locations. This requires that the GIFTI surface be converted with
+    # 'mris_convert --to-scanner', with which FreeSurfer will apply the
+    # volume geometry. Because FreeSurfer does not update the metadata,
+    # there is no way to detect programmatically how the file was
+    # created, and therefore it is the responsibility of the sender to
+    # ensure 'mris_convert --to-scanner' was used.
+    # Also see:
+    # https://github.com/nipreps/smriprep/blob/b29578ec45e51da63e5df6b47a8c88b02ae43acd/smriprep/interfaces/surf.py#L92
+    # https://github.com/nipreps/smriprep/pull/292
+    # https://github.com/nipreps/smriprep/pull/295
+    # Connectome Project pipeline ('AlgorithmSurfaceApplyAffine' and
+    # 'FreeSurfer2CaretConvertAndRegisterNonlinear')
 
     # Set GIFTI metadata
-    run_cmd(f"mris_convert {surf_file} {out_file}")
     set_structure_cmd = (
         f"wb_command -disable-provenance -set-structure {out_file} "
         f"{structure} -surface-type {surf_type}"
@@ -99,43 +127,6 @@ def convert_freesurfer_geometry_surface(
     if surf_secondary_type:
         set_structure_cmd += f" -surface-secondary-type {surf_secondary_type}"
     run_cmd(set_structure_cmd)
-
-    # Adjust CRAS if the matrix is supplied
-    # A note from niworkflow.interfaces.surf.NormalizeSurf:
-    # FreeSurfer includes an offset to the center of the brain
-    # volume that is not respected by all software packages.
-    # Normalization involves adding this offset to the coordinates
-    # of all vertices, and zeroing out that offset, to ensure
-    # consistent behavior across software packages.
-    # In particular, this normalization is consistent with the Human
-    # Connectome Project pipeline (see `AlgorithmSurfaceApplyAffine`
-    # _ and `FreeSurfer2CaretConvertAndRegisterNonlinear`_),
-    # although the the HCP may not zero out the offset.
-    if adjust_cras:
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            ref_file = Path(fs_dir).joinpath(f"sub-{sub_id}", "mri", "brain.finalsurfs.mgz")
-            cras_file = get_cras(ref_file, tmp_dir)
-            print(f"Adjusting CRAS offset: {fname} ...", flush=True)
-            run_cmd(
-                "wb_command -disable-provenance -surface-apply-affine "
-                f"{out_file} {cras_file} {out_file}"
-            )
-            # Cleanup CRAS codes in GIFTI metadata
-            # See https://github.com/nipreps/niworkflows/blob/a2d3686bb9b184ec15e2147a3ae6f86c7e066929/niworkflows/interfaces/surf.py#L562
-            # Using AFNI's gifti_tool
-            reset_cras_cmd = f"gifti_tool -infile {out_file} -write_gifti {out_file}"
-            for key in ["VolGeomC_R", "VolGeomC_A", "VolGeomC_S"]:
-                reset_cras_cmd += f" -mod_DA_meta {key} 0.000000"
-            run_cmd(reset_cras_cmd)
-            # Output CRAS matrix if requested
-            if debug:
-                Path(out_dir).joinpath("temp_cras").mkdir(exist_ok=True)
-                shutil.copy(
-                    cras_file,
-                    Path(out_dir).joinpath(
-                        "temp_cras", f"sub-{sub_id}_hemi-{hemi}_{surf_id}_desc-cras_xfm.mat"
-                    ),
-                )
 
     # Apply affine transformation if the matrix is supplied
     if xfm_file:

@@ -215,7 +215,6 @@ class NativeSurface:
                 surf_id,
                 self.fs_dir,
                 self.out_dir,
-                adjust_cras=True,
                 xfm_file=xfm_file,
                 debug=debug,
             )
@@ -233,7 +232,6 @@ class NativeSurface:
                 surf_id,
                 self.fs_dir,
                 self.out_dir,
-                adjust_cras=False,
                 xfm_file=None,
                 debug=debug,
             )
