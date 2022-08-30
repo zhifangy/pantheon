@@ -2140,7 +2140,7 @@ class Anatomical(FreeSurferVolume):
             # Volume
             file_list = []
             file_list += sorted(self.out_dir.glob("sub-*_space-MNI152NLin6Asym*.nii.gz"))
-            file_list += sorted(self.template_dir.glob("MNI*_space-MNI152NLin6Asym*.nii.gz"))
+            file_list += sorted(self.out_dir.glob("sub-*_space-T1w*_T1w.nii.gz"))
             for f in file_list:
                 run_cmd(f"wb_command -add-to-spec-file {spec_file} INVALID {f}")
         else:
