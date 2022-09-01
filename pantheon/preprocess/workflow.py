@@ -2133,7 +2133,7 @@ class Anatomical(FreeSurferVolume):
             if mesh_den == "32k":
                 file_list = []
                 file_list += sorted(
-                    self.template_dir.glob(f"fsLR_space-fsLR_den-32k*_dseg.dlabel.nii")
+                    self.template_dir.glob(f"*_space-fsLR_den-32k*_dseg.dlabel.nii")
                 )
                 for f in file_list:
                     run_cmd(f"wb_command -add-to-spec-file {spec_file} INVALID {f}")
@@ -3294,7 +3294,7 @@ class ResampleSurfaceFunc(NativeSurfaceFunc):
             f"{self.anat_prefix}_space-MNI152NLin6Asym_res-2_desc-Subcortical_dseg.nii.gz"
         )
         template_seg_file = self.template_dir.joinpath(
-            "MNI_space-MNI152NLin6Asym_res-2_desc-Subcortical_dseg.nii.gz"
+            "ASeg_space-MNI152NLin6Asym_res-2_desc-Subcortical_dseg.nii.gz"
         )
         for f in [seg_file, template_seg_file]:
             if not f.is_file():
@@ -3397,7 +3397,7 @@ class ResampleSurfaceFunc(NativeSurfaceFunc):
                 + f"space-MNI152NLin6Asym_res-02_desc-Subcortical-sm{fwhm_str}_bold.nii.gz"
             )
             template_seg_file = self.template_dir.joinpath(
-                "MNI_space-MNI152NLin6Asym_res-2_desc-Subcortical_dseg.nii.gz"
+                "ASeg_space-MNI152NLin6Asym_res-2_desc-Subcortical_dseg.nii.gz"
             )
             if not volume_file.is_file():
                 raise FileNotFoundError(

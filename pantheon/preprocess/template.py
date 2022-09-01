@@ -141,20 +141,22 @@ def copy_template_file(
     # Atlas file (32k)
     # MMP1, Brodmann and RSN
     for label_id in ["MMP1", "Brodmann", "RSN"]:
-        src_file = atlas_dir.joinpath(f"S1200_space-fsLR_den-32k_desc-{label_id}_dseg.dlabel.nii")
-        dst_file = out_dir.joinpath(src_file.name.replace("S1200", "fsLR"))
+        src_file = atlas_dir.joinpath(f"{label_id}_space-fsLR_den-32k_dseg.dlabel.nii")
+        dst_file = out_dir.joinpath(f"{label_id}_space-fsLR_den-32k_dseg.dlabel.nii")
         copy_list.append((src_file, dst_file))
         file_dict["cifti"].append(dst_file)
     # Schaefer2018
     src_file = atlas_dir.joinpath(
         f"Schaefer2018_space-fsLR_den-32k_desc-400Parcels17Networks_dseg.dlabel.nii"
     )
-    dst_file = out_dir.joinpath(src_file.name.replace("Schaefer2018", "fsLR"))
+    dst_file = out_dir.joinpath(
+        f"Schaefer2018_space-fsLR_den-32k_desc-400Parcels17Networks_dseg.dlabel.nii"
+    )
     copy_list.append((src_file, dst_file))
     file_dict["cifti"].append(dst_file)
     # Subcortical volume ROI file in MNI space
     src_file = mesh_dir.joinpath("Atlas_ROIs.2.nii.gz")
-    dst_file = out_dir.joinpath("MNI_space-MNI152NLin6Asym_res-2_desc-Subcortical_dseg.nii.gz")
+    dst_file = out_dir.joinpath("ASeg_space-MNI152NLin6Asym_res-2_desc-Subcortical_dseg.nii.gz")
     copy_list.append((src_file, dst_file))
     file_dict["volume"].append(dst_file)
     # Lut
