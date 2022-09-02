@@ -39,7 +39,7 @@ def warp_atlas_to_reference(
     out_file: PathLike,
     xfm_file: PathLike,
     ref_file: PathLike,
-    lut_file: Optional[PathLike],
+    lut_file: Optional[PathLike] = None,
 ) -> Path:
     """Warps atlas file to target space.
 
