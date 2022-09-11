@@ -431,7 +431,7 @@ def assemble_dense_scalar_file(
     right_roi_file: Optional[PathLike] = None,
     volume_file: Optional[PathLike] = None,
     volume_label_file: Optional[PathLike] = None,
-    cifti_map_name: Optional[str] = "",
+    cifti_map_name: Optional[Union[str, list[str]]] = "",
 ) -> Path:
     """Combines surface and volume data to make a CIFTI dscalar file.
 
@@ -443,7 +443,8 @@ def assemble_dense_scalar_file(
         right_roi_file: Right surfce mask file.
         volume_file: Volume NIFTI file.
         volume_label_file: Volume structure label file.
-        cifti_map_name: CIFTI image map name.
+        cifti_map_name: CIFTI image map name. It could be a list of
+            string corresponds to each map in the CIFTI file.
 
     Returns:
         A CIFTI dscalar file.
@@ -470,7 +471,12 @@ def assemble_dense_scalar_file(
     print(f"Creating dense scalar file: {out_file} ...", flush=True)
     run_cmd(cmd)
     # Set metadata
-    run_cmd(f"wb_command -disable-provenance -set-map-names {out_file} -map 1 {cifti_map_name}")
+    cmd = f"wb_command -disable-provenance -set-map-names {out_file} "
+    if isinstance(cifti_map_name, str):
+        cifti_map_name = [cifti_map_name]
+    for i in range(len(cifti_map_name)):
+        cmd += f"-map {i+1} {cifti_map_name[i]} "
+    run_cmd(cmd)
     return Path(out_file)
 
 
@@ -480,7 +486,7 @@ def assemble_dense_label_file(
     right_surf_file: Optional[PathLike] = None,
     left_roi_file: Optional[PathLike] = None,
     right_roi_file: Optional[PathLike] = None,
-    cifti_map_name: str = "",
+    cifti_map_name: Optional[Union[str, list[str]]] = "",
 ) -> Path:
     """Combines L and R surface data to make a CIFTI dlabel file.
 
@@ -490,7 +496,8 @@ def assemble_dense_label_file(
         right_surf_file: Right surface GIFTI file.
         left_roi_file: Left surface mask file.
         right_roi_file: Right surfce mask file.
-        cifti_map_name: CIFTI image map name.
+        cifti_map_name: CIFTI image map name. It could be a list of
+            string corresponds to each map in the CIFTI file.
 
     Returns:
         A CIFTI dlabel file.
@@ -512,7 +519,12 @@ def assemble_dense_label_file(
     print(f"Creating dense label file: {out_file} ...", flush=True)
     run_cmd(cmd)
     # Set metadata
-    run_cmd(f"wb_command -disable-provenance -set-map-names {out_file} -map 1 {cifti_map_name}")
+    cmd = f"wb_command -disable-provenance -set-map-names {out_file} "
+    if isinstance(cifti_map_name, str):
+        cifti_map_name = [cifti_map_name]
+    for i in range(len(cifti_map_name)):
+        cmd += f"-map {i+1} {cifti_map_name[i]} "
+    run_cmd(cmd)
     return Path(out_file)
 
 
