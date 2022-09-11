@@ -642,7 +642,7 @@ def make_dense_label_file(
         cifti_map_name: CIFTI image map name. It could be a list of
             string corresponds to each map in the CIFTI file.
         **kwargs: Keyword arguments pass to function
-            'assemble_dense_scalar_file'.
+            'assemble_dense_label_file'.
 
     Returns:
         A CIFTI dlabel file.
@@ -713,7 +713,7 @@ def make_dense_timeseries_file(
         volume_label_file: Volume structure label file. It could also be
             a nib.nifti1.Nifti1Image object.
         **kwargs: Keyword arguments pass to function
-            'assemble_dense_dtseries_file'.
+            'assemble_dense_timeseries_file'.
 
     Returns:
         A CIFTI dtseries file.
