@@ -16,9 +16,9 @@ from ..utils.shell import run_cmd
 from ..utils.typing import PathLike
 
 
-###################
-# Create GIFTI file
-###################
+####################
+# Create GIFTI image
+####################
 
 
 def make_gifti_image(
