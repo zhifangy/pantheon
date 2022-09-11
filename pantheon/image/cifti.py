@@ -10,12 +10,14 @@
 from __future__ import annotations
 from typing import Union, Optional, Literal, Any
 from pathlib import Path
+import tempfile
 import numpy as np
 import nibabel as nib
 import nilearn.image as nli
 import nilearn.masking as nlm
 from scipy.stats import zscore
 
+from .gifti import make_gifti_image, make_gifti_label_image
 from ..utils.shell import run_cmd
 from ..utils.typing import PathLike
 
@@ -421,6 +423,236 @@ def get_surf_data_from_cifti(
 ###################
 # Create CIFTI file
 ###################
+
+
+def make_dense_scalar_file(
+    out_file: PathLike,
+    left_surf_data: Optional[np.ndarray] = None,
+    right_surf_data: Optional[np.ndarray] = None,
+    volume_img: Optional[nib.nifti1.Nifti1Image] = None,
+    volume_label_file: Optional[Union[PathLike, nib.nifti1.Nifti1Image]] = None,
+    cifti_map_name: Optional[Union[str, list[str]]] = "",
+    **kwargs,
+) -> Path:
+    """Combines surface and volume data to make a CIFTI dscalar file.
+
+    Args:
+        out_file: Output CIFTI dscalar file.
+        left_surf_data: Left surface data.
+        right_surf_file: Right surface data.
+        volume_img: Volume NIFTI image.
+        volume_label_file: Volume structure label file. It could also be
+            a nib.nifti1.Nifti1Image object.
+        cifti_map_name: CIFTI image map name. It could be a list of
+            string corresponds to each map in the CIFTI file.
+        **kwargs: Keyword arguments pass to function
+            'assemble_dense_scalar_file'.
+
+    Returns:
+        A CIFTI dscalar file.
+
+    Raises:
+        ValueError: Left or right surface has incorrect dimensions.
+    """
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # write surface/volume data to temporary file
+        lh_file, rh_file, vol_file = None, None, None
+        if not left_surf_data is None:
+            if left_surf_data.ndim == 1:
+                lh_img = make_gifti_image(
+                    left_surf_data, "CortexLeft", datatype="NIFTI_TYPE_FLOAT64"
+                )
+            elif left_surf_data.ndim == 2:
+                # assume maps in the 1st dimension
+                lh_img = make_gifti_image(
+                    [left_surf_data[i, :] for i in range(left_surf_data.shape[0])],
+                    "CortexLeft",
+                    datatype="NIFTI_TYPE_FLOAT64",
+                )
+            else:
+                ValueError("Argument 'left_surf_data should be a 1d or 2d numpy array.'")
+            lh_file = Path(tmp_dir).joinpath("hemi-L.shape.gii")
+            lh_img.to_filename(lh_file)
+        if not right_surf_data is None:
+            if right_surf_data.ndim == 1:
+                rh_img = make_gifti_image(
+                    right_surf_data, "CortexRight", datatype="NIFTI_TYPE_FLOAT64"
+                )
+            elif right_surf_data.ndim == 2:
+                # assume maps in the 1st dimension
+                rh_img = make_gifti_image(
+                    [right_surf_data[i, :] for i in range(right_surf_data.shape[0])],
+                    "CortexRight",
+                    datatype="NIFTI_TYPE_FLOAT64",
+                )
+            else:
+                ValueError("Argument 'right_surf_data should be a 1d or 2d numpy array.'")
+            rh_file = Path(tmp_dir).joinpath("hemi-R.shape.gii")
+            rh_img.to_filename(rh_file)
+        if not volume_img is None:
+            vol_file = Path(tmp_dir).joinpath("volume.nii.gz")
+            volume_img.to_filename(vol_file)
+        if isinstance(volume_label_file, nib.nifti1.Nifti1Image):
+            volume_label_file.to_filename(Path(tmp_dir).joinpath("volume_label.nii.gz"))
+            volume_label_file = Path(tmp_dir).joinpath("volume_label.nii.gz")
+        # assemble CIFTI file
+        out_file = assemble_dense_scalar_file(
+            out_file,
+            left_surf_file=lh_file,
+            right_surf_file=rh_file,
+            volume_file=vol_file,
+            volume_label_file=volume_label_file,
+            cifti_map_name=cifti_map_name,
+            **kwargs,
+        )
+    return out_file
+
+
+def make_dense_label_file(
+    out_file: PathLike,
+    label: dict[str, dict[str, Union[str, int, float]]],
+    left_surf_data: Optional[np.ndarray] = None,
+    right_surf_data: Optional[np.ndarray] = None,
+    cifti_map_name: Optional[Union[str, list[str]]] = "",
+    **kwargs,
+) -> Path:
+    """Combines L and R surface data to make a CIFTI dlabel file.
+
+    Args:
+        out_file: Output CIFTI dlabel file.
+        label: Lookup table of the labels. It should be a dict in
+            the format of {label_name: {key:key, red:value, green:value,
+            blue:value, alpha:value}}.
+        left_surf_data: Left surface data.
+        right_surf_file: Right surface data.
+        cifti_map_name: CIFTI image map name. It could be a list of
+            string corresponds to each map in the CIFTI file.
+        **kwargs: Keyword arguments pass to function
+            'assemble_dense_scalar_file'.
+
+    Returns:
+        A CIFTI dlabel file.
+
+    Raises:
+        ValueError: Left or right surface has incorrect dimensions.
+    """
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # write surface/volume data to temporary file
+        lh_file, rh_file = None, None
+        if not left_surf_data is None:
+            if left_surf_data.ndim == 1:
+                lh_img = make_gifti_label_image(left_surf_data, "CortexLeft", label)
+            elif left_surf_data.ndim == 2:
+                # assume maps in the 1st dimension
+                lh_img = make_gifti_label_image(
+                    [left_surf_data[i, :] for i in range(left_surf_data.shape[0])],
+                    "CortexLeft",
+                    label,
+                )
+            else:
+                ValueError("Argument 'left_surf_data should be a 1d or 2d numpy array.'")
+            lh_file = Path(tmp_dir).joinpath("hemi-L.shape.gii")
+            lh_img.to_filename(lh_file)
+        if not right_surf_data is None:
+            if right_surf_data.ndim == 1:
+                rh_img = make_gifti_label_image(right_surf_data, "CortexRight", label)
+            elif right_surf_data.ndim == 2:
+                # assume maps in the 1st dimension
+                rh_img = make_gifti_label_image(
+                    [right_surf_data[i, :] for i in range(right_surf_data.shape[0])],
+                    "CortexRight",
+                    label,
+                )
+            else:
+                ValueError("Argument 'right_surf_data should be a 1d or 2d numpy array.'")
+            rh_file = Path(tmp_dir).joinpath("hemi-R.shape.gii")
+            rh_img.to_filename(rh_file)
+        # assemble CIFTI file
+        out_file = assemble_dense_label_file(
+            out_file,
+            left_surf_file=lh_file,
+            right_surf_file=rh_file,
+            cifti_map_name=cifti_map_name,
+            **kwargs,
+        )
+    return out_file
+
+
+def make_dense_timeseries_file(
+    out_file: PathLike,
+    timestep: float,
+    left_surf_data: Optional[np.ndarray] = None,
+    right_surf_data: Optional[np.ndarray] = None,
+    volume_img: Optional[nib.nifti1.Nifti1Image] = None,
+    volume_label_file: Optional[Union[PathLike, nib.nifti1.Nifti1Image]] = None,
+    **kwargs,
+) -> Path:
+    """Combines surface and volume data to make a CIFTI dtseries file.
+
+    Args:
+        out_file: Output CIFTI dtseries file.
+        timestep: Repetition time (TR).
+        left_surf_data: Left surface data.
+        right_surf_file: Right surface data.
+        volume_img: Volume NIFTI image.
+        volume_label_file: Volume structure label file. It could also be
+            a nib.nifti1.Nifti1Image object.
+        **kwargs: Keyword arguments pass to function
+            'assemble_dense_dtseries_file'.
+
+    Returns:
+        A CIFTI dtseries file.
+
+    Raises:
+        ValueError: Left or right surface has incorrect dimensions.
+    """
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # write surface/volume data to temporary file
+        lh_file, rh_file, vol_file = None, None, None
+        if not left_surf_data is None:
+            if left_surf_data.ndim == 2:
+                # assume maps in the 1st dimension
+                lh_img = make_gifti_image(
+                    [left_surf_data[i, :] for i in range(left_surf_data.shape[0])],
+                    "CortexLeft",
+                    datatype="NIFTI_TYPE_FLOAT64",
+                )
+            else:
+                ValueError("Argument 'left_surf_data should be a 2d numpy array.'")
+            lh_file = Path(tmp_dir).joinpath("hemi-L.func.gii")
+            lh_img.to_filename(lh_file)
+        if not right_surf_data is None:
+            if right_surf_data.ndim == 2:
+                # assume maps in the 1st dimension
+                rh_img = make_gifti_image(
+                    [right_surf_data[i, :] for i in range(right_surf_data.shape[0])],
+                    "CortexRight",
+                    datatype="NIFTI_TYPE_FLOAT64",
+                )
+            else:
+                ValueError("Argument 'right_surf_data should be a 2d numpy array.'")
+            rh_file = Path(tmp_dir).joinpath("hemi-R.func.gii")
+            rh_img.to_filename(rh_file)
+        if not volume_img is None:
+            vol_file = Path(tmp_dir).joinpath("volume.nii.gz")
+            volume_img.to_filename(vol_file)
+        if isinstance(volume_label_file, nib.nifti1.Nifti1Image):
+            volume_label_file.to_filename(Path(tmp_dir).joinpath("volume_label.nii.gz"))
+            volume_label_file = Path(tmp_dir).joinpath("volume_label.nii.gz")
+        # assemble CIFTI file
+        out_file = assemble_dense_timeseries_file(
+            out_file,
+            timestep,
+            left_surf_file=lh_file,
+            right_surf_file=rh_file,
+            volume_file=vol_file,
+            volume_label_file=volume_label_file,
+            **kwargs,
+        )
+    return out_file
 
 
 def assemble_dense_scalar_file(
