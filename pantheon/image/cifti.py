@@ -460,15 +460,11 @@ def make_dense_scalar_file(
         lh_file, rh_file, vol_file = None, None, None
         if not left_surf_data is None:
             if left_surf_data.ndim == 1:
-                lh_img = make_gifti_image(
-                    left_surf_data, "CortexLeft", datatype="NIFTI_TYPE_FLOAT64"
-                )
+                lh_img = make_gifti_image(left_surf_data, "CortexLeft")
             elif left_surf_data.ndim == 2:
                 # assume maps in the 1st dimension
                 lh_img = make_gifti_image(
-                    [left_surf_data[i, :] for i in range(left_surf_data.shape[0])],
-                    "CortexLeft",
-                    datatype="NIFTI_TYPE_FLOAT64",
+                    [left_surf_data[i, :] for i in range(left_surf_data.shape[0])], "CortexLeft"
                 )
             else:
                 ValueError("Argument 'left_surf_data should be a 1d or 2d numpy array.'")
@@ -476,15 +472,11 @@ def make_dense_scalar_file(
             lh_img.to_filename(lh_file)
         if not right_surf_data is None:
             if right_surf_data.ndim == 1:
-                rh_img = make_gifti_image(
-                    right_surf_data, "CortexRight", datatype="NIFTI_TYPE_FLOAT64"
-                )
+                rh_img = make_gifti_image(right_surf_data, "CortexRight")
             elif right_surf_data.ndim == 2:
                 # assume maps in the 1st dimension
                 rh_img = make_gifti_image(
-                    [right_surf_data[i, :] for i in range(right_surf_data.shape[0])],
-                    "CortexRight",
-                    datatype="NIFTI_TYPE_FLOAT64",
+                    [right_surf_data[i, :] for i in range(right_surf_data.shape[0])], "CortexRight"
                 )
             else:
                 ValueError("Argument 'right_surf_data should be a 1d or 2d numpy array.'")
@@ -616,9 +608,7 @@ def make_dense_timeseries_file(
             if left_surf_data.ndim == 2:
                 # assume maps in the 1st dimension
                 lh_img = make_gifti_image(
-                    [left_surf_data[i, :] for i in range(left_surf_data.shape[0])],
-                    "CortexLeft",
-                    datatype="NIFTI_TYPE_FLOAT64",
+                    [left_surf_data[i, :] for i in range(left_surf_data.shape[0])], "CortexLeft"
                 )
             else:
                 ValueError("Argument 'left_surf_data should be a 2d numpy array.'")
@@ -628,9 +618,7 @@ def make_dense_timeseries_file(
             if right_surf_data.ndim == 2:
                 # assume maps in the 1st dimension
                 rh_img = make_gifti_image(
-                    [right_surf_data[i, :] for i in range(right_surf_data.shape[0])],
-                    "CortexRight",
-                    datatype="NIFTI_TYPE_FLOAT64",
+                    [right_surf_data[i, :] for i in range(right_surf_data.shape[0])], "CortexRight"
                 )
             else:
                 ValueError("Argument 'right_surf_data should be a 2d numpy array.'")
