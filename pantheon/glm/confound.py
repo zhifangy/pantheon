@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Functions relate to GLM confound regressor."""
+"""Functions relate to GLM confounds regressor."""
 
 # Author: Zhifang Ye
 # Email: zhifang.ye.fghm@gmail.com
@@ -15,16 +15,17 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from .regressor import make_poly_regressors
 from ..utils.shell import run_cmd
 from ..utils.typing import PathLike
 
 
-def make_confound_regressor(
+def make_confounds_regressor(
     df: pd.DataFrame,
     out_dir: PathLike,
     demean: bool = True,
     split_into_pad_runs: bool = True,
-    confound_list: list[str] = [
+    confounds_list: list[str] = [
         "trans_x",
         "trans_y",
         "trans_z",
@@ -35,26 +36,26 @@ def make_confound_regressor(
     ],
     prefix: Optional[str] = None,
 ) -> list[Path]:
-    """Makes confound regressors file.
+    """Makes confounds regressors file.
 
     This function makes 1D txt file that could be read by AFNI's
     programs. It also has the ability to make run-specific padded files.
     This is very useful when building a design matrix contains all runs.
 
     Args:
-        df: Confound dataframe.
+        df: Confounds dataframe.
         out_dir: Directory to store output file.
         demean: If true, remove mean value from each column.
-        split_into_pad_runs: If true, make run-specific confound files
+        split_into_pad_runs: If true, make run-specific confounds files
             with same length as input df. Values in rows doesn't belong
             to the current run are filled with 0.
-        confound_list: Confound names include in the output file. Every
-            specified confound should present in the df.
+        confounds_list: Confounds names include in the output file.
+            Every specified confound should present in the df.
         prefix: Filename prefix of the output file. If it's None, the
-            default filename is confound.1D (or ${run_id}_confound.1D).
+            default filename is confounds.1D (or {run_id}_confounds.1D).
 
     Returns:
-        A confound regressor file which could be used in AFNI's
+        A confounds regressor file which could be used in AFNI's
         3dDeconvolve program.
         If 'split_into_pad_runs' is true, returning a list of filenames
         corresponds to each run in the df.
@@ -64,7 +65,7 @@ def make_confound_regressor(
             true.
     """
 
-    print(f"Confound regressor: {', '.join(confound_list)}.")
+    print(f"Confounds regressor: {', '.join(confounds_list)}.")
     if prefix:
         prefix = prefix if prefix.endswith("_") else f"{prefix}_"
     else:
@@ -74,42 +75,42 @@ def make_confound_regressor(
         run_list = df["run_id"].unique().tolist()
         if len(run_list) < 2:
             raise ValueError("There should be at least 2 runs if 'split_into_pad_runs' is true.")
-    # Mean-center confound regressors
+    # Mean-center confounds regressors
     if demean:
         if split_into_pad_runs:
-            confound = (
-                df.loc[:, ["run_id"] + confound_list]
+            confounds = (
+                df.loc[:, ["run_id"] + confounds_list]
                 .groupby(by=["run_id"], sort=False)
                 .transform(lambda x: x - x.mean())
             )
-            confound = confound.fillna(0)
+            confounds = confounds.fillna(0)
             print("Mean center all regressors within each run.")
         else:
-            confound = (df.loc[:, confound_list] - df.loc[:, confound_list].mean()).fillna(0)
+            confounds = (df.loc[:, confounds_list] - df.loc[:, confounds_list].mean()).fillna(0)
             print("Mean center all regressors.")
     # Or not
     else:
-        confound = df.loc[:, confound_list].fillna(0)
-    # Convert confound regressors for per run regression
+        confounds = df.loc[:, confounds_list].fillna(0)
+    # Convert confounds regressors for per run regression
     if split_into_pad_runs:
-        confound_split = dict()
+        confounds_split = dict()
         for run_id in run_list:
-            confound_split[run_id] = np.zeros((df.shape[0], len(confound_list)))
-            confound_split[run_id][df.run_id == run_id, :] = confound.loc[
+            confounds_split[run_id] = np.zeros((df.shape[0], len(confounds_list)))
+            confounds_split[run_id][df.run_id == run_id, :] = confounds.loc[
                 df.run_id == run_id, :
             ].to_numpy()
-    # Write confound regressors to file
-    fname = out_dir.joinpath(f"{prefix}confound.1D")
-    confound_file = [fname]
-    np.savetxt(fname, confound, fmt="%.6f")
+    # Write confounds regressors to file
+    fname = out_dir.joinpath(f"{prefix}confounds.1D")
+    confounds_file = [fname]
+    np.savetxt(fname, confounds, fmt="%.6f")
     if split_into_pad_runs:
-        confound_file = []
+        confounds_file = []
         for run_id in run_list:
-            fname = out_dir.joinpath(f"{prefix}{run_id}_confound.1D")
-            confound_file.append(fname)
-            np.savetxt(fname, confound_split[run_id], fmt="%.6f")
+            fname = out_dir.joinpath(f"{prefix}{run_id}_confounds.1D")
+            confounds_file.append(fname)
+            np.savetxt(fname, confounds_split[run_id], fmt="%.6f")
 
-    return confound_file
+    return confounds_file
 
 
 def make_good_tr_regressor(
@@ -125,7 +126,7 @@ def make_good_tr_regressor(
     """Calculates good TR based on motion parameters.
 
     Args:
-        df: Confound dataframe.
+        df: Confounds dataframe.
         out_dir: Directory to store output file.
         censor_pre_tr: If true, also mark the the time point before a
             bad TR as bad.
@@ -272,37 +273,74 @@ def calc_motion_enorm(df: pd.DataFrame) -> np.ndarray:
     return enorm
 
 
-def remove_allzero_column(confound_file: PathLike) -> tuple[Path, list]:
-    """Removes all zero column in confound regressor file.
+def remove_allzero_column(confounds_file: PathLike) -> tuple[Path, list]:
+    """Removes all zero column in confounds regressor file.
 
-    This functions overwrites the input confound regressor file. It is
+    This functions overwrites the input confounds regressor file. It is
     useful when the head motions are very small in some direction. In
     such case, the regressors will contain only zeros under a give float
     precision, which could be problematic for GLM programs.
 
     Args:
-        confound_file: Confound regressor file.
+        confounds_file: Confounds regressor file.
 
     Returns:
-        A tuple (ConfoundFile, Index), where ConfoundFile is the
-        filename of the input confound regressor file, and the Index is
+        A tuple (ConfoundsFile, Index), where ConfoundsFile is the
+        filename of the input confounds regressor file, and the Index is
         the index of columns only have zeros.
     """
 
-    confound = np.loadtxt(confound_file)
-    ncol = confound.shape[1]
+    confounds = np.loadtxt(confounds_file)
+    ncol = confounds.shape[1]
     # Check each column
     sel = [True] * ncol
-    for i in range(confound.shape[1]):
-        if np.allclose(confound[:, i], 0):
+    for i in range(confounds.shape[1]):
+        if np.allclose(confounds[:, i], 0):
             sel[i] = False
     # Remove column in place
     if np.sum(sel) != ncol:
-        confound = confound[:, sel]
+        confounds = confounds[:, sel]
         print(f"WARNING: Removing {ncol-np.sum(sel)} all zero column!")
-        np.savetxt(confound_file, confound, fmt="%.6f")
+        np.savetxt(confounds_file, confounds, fmt="%.6f")
         # get bad column index
         allzero_column_index = list(np.arange(ncol)[np.invert(sel)])
     else:
         allzero_column_index = []
-    return confound_file, allzero_column_index
+    return confounds_file, allzero_column_index
+
+
+def add_polynomial(
+    confounds: Union[pd.DataFrame, np.ndarray], order: int = 2
+) -> Union[pd.DataFrame, np.ndarray]:
+    """Add legendre polynominal regressors to confounds.
+
+    Args:
+        confounds: Confounds regressors matrix. It could be a DataFrame
+            or a numpy array with samples in the 1st dimension.
+        order: Largest polynomial order (degree) includes in the
+            returned array.
+
+    Returns:
+        A DataFrame or numpy array contains columns of input confounds
+        and legendre polynominals.
+    """
+
+    n_samples = confounds.shape[0]
+    poly = make_poly_regressors(n_samples, order=order)
+    if isinstance(confounds, np.ndarray):
+        if confounds.ndim == 1:
+            X = np.hstack((confounds[:, np.newaxis], poly))
+        elif confounds.ndim == 2:
+            X = np.hstack((confounds, poly))
+        else:
+            raise ValueError(
+                "If argument 'confounds' is a numpy array, the dimension should be 1 or 2"
+            )
+    elif isinstance(confounds, pd.DataFrame):
+        X = confounds.copy()
+        for i in range(order + 1):
+            X[f"poly{i}"] = poly[:, i]
+    else:
+        raise TypeError("Argument 'confounds' should be a DataFrame or numpy array.")
+
+    return X

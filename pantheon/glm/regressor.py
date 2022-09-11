@@ -30,3 +30,27 @@ def make_run_start_string(run_length: list[int]) -> str:
     run_start = np.cumsum(np.insert(run_length, 0, 0), dtype=np.int16)[:-1]
     run_start = "1D: " + " ".join([str(i) for i in run_start])
     return run_start
+
+
+def make_poly_regressors(n_samples: int, order: int = 2) -> np.ndarray:
+    """Make legendre polynominal regressors.
+
+    Args:
+        n_samples: Number of samples from the polynomial curves.
+        order: Largest polynomial order (degree) includes in the
+            returned array.
+
+    Return:
+        A numpy array contains polynomial regressors from 0 to n-th
+        order (degree). The shape is (n_sample, order + 1).
+    """
+
+    # 0 order column
+    X = np.ones((n_samples, 1))
+    # higher order columns
+    for d in range(order):
+        poly = np.polynomial.legendre.Legendre.basis(d + 1)
+        poly_sample = poly(np.linspace(-1, 1, n_samples))
+        X = np.hstack((X, poly_sample[:, np.newaxis]))
+
+    return X
