@@ -665,7 +665,7 @@ def assemble_dense_scalar_file(
     volume_label_file: Optional[PathLike] = None,
     cifti_map_name: Optional[Union[str, list[str]]] = "",
 ) -> Path:
-    """Combines surface and volume data to make a CIFTI dscalar file.
+    """Combines surface and volume files to make a CIFTI dscalar file.
 
     Args:
         out_file: Output CIFTI dscalar file.
@@ -720,7 +720,7 @@ def assemble_dense_label_file(
     right_roi_file: Optional[PathLike] = None,
     cifti_map_name: Optional[Union[str, list[str]]] = "",
 ) -> Path:
-    """Combines L and R surface data to make a CIFTI dlabel file.
+    """Combines L and R surface files to make a CIFTI dlabel file.
 
     Args:
         out_file: Output CIFTI dlabel file.
@@ -770,7 +770,7 @@ def assemble_dense_timeseries_file(
     volume_file: Optional[PathLike] = None,
     volume_label_file: Optional[PathLike] = None,
 ) -> Path:
-    """Combines surface and volume data to make a CIFTI dtseries file.
+    """Combines surface and volume files to make a CIFTI dtseries file.
 
     Args:
         out_file: Output CIFTI dtseries file.
