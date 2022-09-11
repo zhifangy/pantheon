@@ -420,6 +420,127 @@ def get_surf_data_from_cifti(
             return surf_data
 
 
+####################
+# Create CIFTI image
+####################
+
+
+def make_dense_scalar_image(
+    left_surf_data: Optional[np.ndarray] = None,
+    right_surf_data: Optional[np.ndarray] = None,
+    volume_img: Optional[nib.nifti1.Nifti1Image] = None,
+    volume_label_file: Optional[Union[PathLike, nib.nifti1.Nifti1Image]] = None,
+    cifti_map_name: Optional[Union[str, list[str]]] = "",
+    **kwargs,
+) -> nib.cifti2.Cifti2Image:
+    """Combines surface and volume data to make a CIFTI dscalar image.
+
+    Args:
+        left_surf_data: Left surface data.
+        right_surf_file: Right surface data.
+        volume_img: Volume NIFTI image.
+        volume_label_file: Volume structure label file. It could also be
+            a nib.nifti1.Nifti1Image object.
+        cifti_map_name: CIFTI image map name. It could be a list of
+            string corresponds to each map in the CIFTI file.
+        **kwargs: Keyword arguments pass to function
+            'make_dense_scalar_file'.
+
+    Returns:
+        A nib.cifti2.Cifti2Image object.
+    """
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        cifti_file = Path(tmp_dir).joinpath("temp.dscalar.nii")
+        make_dense_scalar_file(
+            cifti_file,
+            left_surf_data=left_surf_data,
+            right_surf_data=right_surf_data,
+            volume_img=volume_img,
+            volume_label_file=volume_label_file,
+            cifti_map_name=cifti_map_name,
+            **kwargs,
+        )
+        img = nib.load(cifti_file)
+    return img
+
+
+def make_dense_label_image(
+    label: dict[str, dict[str, Union[str, int, float]]],
+    left_surf_data: Optional[np.ndarray] = None,
+    right_surf_data: Optional[np.ndarray] = None,
+    cifti_map_name: Optional[Union[str, list[str]]] = "",
+    **kwargs,
+) -> nib.cifti2.Cifti2Image:
+    """Combines L and R surface data to make a CIFTI dlabel image.
+
+    Args:
+        label: Lookup table of the labels. It should be a dict in
+            the format of {label_name: {key:key, red:value, green:value,
+            blue:value, alpha:value}}.
+        left_surf_data: Left surface data.
+        right_surf_file: Right surface data.
+        cifti_map_name: CIFTI image map name. It could be a list of
+            string corresponds to each map in the CIFTI file.
+        **kwargs: Keyword arguments pass to function
+            'make_dense_label_file'.
+
+    Returns:
+        A nib.cifti2.Cifti2Image object.
+    """
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        cifti_file = Path(tmp_dir).joinpath("temp.dlabel.nii")
+        make_dense_label_file(
+            label,
+            left_surf_data=left_surf_data,
+            right_surf_data=right_surf_data,
+            cifti_map_name=cifti_map_name,
+            **kwargs,
+        )
+        img = nib.load(cifti_file)
+    return img
+
+
+def make_dense_timeseries_file(
+    timestep: float,
+    left_surf_data: Optional[np.ndarray] = None,
+    right_surf_data: Optional[np.ndarray] = None,
+    volume_img: Optional[nib.nifti1.Nifti1Image] = None,
+    volume_label_file: Optional[Union[PathLike, nib.nifti1.Nifti1Image]] = None,
+    **kwargs,
+) -> nib.cifti2.Cifti2Image:
+    """Combines surface and volume data to make a CIFTI dtseries image.
+
+    Args:
+        timestep: Repetition time (TR).
+        left_surf_data: Left surface data.
+        right_surf_file: Right surface data.
+        volume_img: Volume NIFTI image.
+        volume_label_file: Volume structure label file. It could also be
+            a nib.nifti1.Nifti1Image object.
+        **kwargs: Keyword arguments pass to function
+            'make_dense_timeseries_file'.
+
+    Returns:
+        A nib.cifti2.Cifti2Image object.
+    """
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        cifti_file = Path(tmp_dir).joinpath("temp.dtseries.nii")
+        make_dense_timeseries_file(
+            cifti_file,
+            timestep,
+            left_surf_data=left_surf_data,
+            right_surf_data=right_surf_data,
+            volume_img=volume_img,
+            volume_label_file=volume_label_file,
+            **kwargs,
+        )
+        img = nib.load(cifti_file)
+    return img
+
+
 ###################
 # Create CIFTI file
 ###################
