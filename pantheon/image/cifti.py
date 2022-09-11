@@ -423,7 +423,7 @@ def get_surf_data_from_cifti(
 ###################
 
 
-def make_dense_scalar(
+def assemble_dense_scalar_file(
     out_file: PathLike,
     left_surf_file: Optional[PathLike] = None,
     right_surf_file: Optional[PathLike] = None,
@@ -474,7 +474,7 @@ def make_dense_scalar(
     return Path(out_file)
 
 
-def make_dense_label(
+def assemble_dense_label_file(
     out_file: PathLike,
     left_surf_file: Optional[PathLike] = None,
     right_surf_file: Optional[PathLike] = None,
@@ -516,7 +516,7 @@ def make_dense_label(
     return Path(out_file)
 
 
-def make_dense_timeseries(
+def assemble_dense_timeseries_file(
     out_file: PathLike,
     timestep: float,
     left_surf_file: Optional[PathLike] = None,

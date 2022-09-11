@@ -49,7 +49,11 @@ from .bold import (
     make_func_map_name,
 )
 from ..image.gifti import resample_surface, resample_metric, resample_label
-from ..image.cifti import make_dense_scalar, make_dense_label, make_dense_timeseries
+from ..image.cifti import (
+    assemble_dense_scalar_file,
+    assemble_dense_label_file,
+    assemble_dense_timeseries_file,
+)
 from ..utils.validation import (
     conform_sub_id,
     parse_hemi,
@@ -1837,14 +1841,14 @@ class Anatomical(FreeSurferVolume):
 
             # Make dense scalar
             if metric_id == "sulc":
-                out_file = make_dense_scalar(
+                out_file = assemble_dense_scalar_file(
                     out_file,
                     left_surf_file=left_surf_file,
                     right_surf_file=right_surf_file,
                     cifti_map_name=cifti_map_name,
                 )
             else:
-                out_file = make_dense_scalar(
+                out_file = assemble_dense_scalar_file(
                     out_file,
                     left_surf_file=left_surf_file,
                     right_surf_file=right_surf_file,
@@ -1936,7 +1940,7 @@ class Anatomical(FreeSurferVolume):
                 )
 
                 # Make dense scalar
-                out_file = make_dense_scalar(
+                out_file = assemble_dense_scalar_file(
                     out_file,
                     left_surf_file=left_surf_file,
                     right_surf_file=right_surf_file,
@@ -2034,7 +2038,7 @@ class Anatomical(FreeSurferVolume):
             cifti_map_name = f"{self.anat_prefix}_space-{space}_den-{mesh_den}{desc}-{atlas_id}"
 
             # Make dense label
-            out_file = make_dense_label(
+            out_file = assemble_dense_label_file(
                 out_file,
                 left_surf_file=left_surf_file,
                 right_surf_file=right_surf_file,
@@ -3418,7 +3422,7 @@ class ResampleSurfaceFunc(NativeSurfaceFunc):
 
         # Make func dtseries
         res = {}
-        out_file = make_dense_timeseries(
+        out_file = assemble_dense_timeseries_file(
             out_file,
             timestep,
             left_surf_file=left_surf_file,
@@ -3539,7 +3543,7 @@ class ResampleSurfaceFunc(NativeSurfaceFunc):
                     func_prefix + f"space-fsLR_den-{mesh_den}_{suffix}.dscalar.nii"
                 )
                 # Make dscalar file
-                out_file = make_dense_scalar(
+                out_file = assemble_dense_scalar_file(
                     out_file,
                     left_surf_file=left_surf_file,
                     right_surf_file=right_surf_file,
