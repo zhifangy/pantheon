@@ -502,7 +502,7 @@ def make_dense_label_image(
     return img
 
 
-def make_dense_timeseries_file(
+def make_dense_timeseries_image(
     timestep: float,
     left_surf_data: Optional[np.ndarray] = None,
     right_surf_data: Optional[np.ndarray] = None,
