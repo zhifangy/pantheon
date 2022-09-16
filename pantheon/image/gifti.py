@@ -26,8 +26,8 @@ def make_gifti_image(
     structure: str,
     intent: str = "NIFTI_INTENT_NONE",
     datatype: str = "NIFTI_TYPE_FLOAT32",
-    kw_args_image: dict[str, Any] = {},
-    kw_args_darray: dict[str, Any] = {},
+    kw_args_image: Optional[dict[str, Any]] = None,
+    kw_args_darray: Optional[dict[str, Any]] = None,
 ) -> nib.gifti.gifti.GiftiImage:
     """
     Makes GIFTI image.
@@ -40,11 +40,13 @@ def make_gifti_image(
         intent: GIFTI file intent type.
         datatype: GIFTI file data type.
         kw_args_image: Additional keyword arguments pass to nibabel
-            GiftiImage class. Image metadata should be stored in an item
-            which key is 'meta'.
+            GiftiImage class. It should be a dict contains valid keyword
+            arguments in class GiftiImage as keys. Image metadata should
+            be stored in an item which key is 'meta'.
         kw_args_darray: Additional keyword arguments pass to nibabel
-            GiftiDataArray class. Data array metadata should be stored
-            in an item which key is 'meta'.
+            GiftiDataArray class. It should be a dict contains valid
+            keyword arguments in class GiftiDataArray as keys.Data array
+            metadata should be stored in an item which key is 'meta'.
 
     Returns:
         A nib.gifti.gifti.GiftiImage object.
@@ -52,13 +54,20 @@ def make_gifti_image(
 
     # Conform input
     data = [data] if not isinstance(data, list) else data
+    if kw_args_image is None:
+        kw_args_image = {}
+    if kw_args_darray is None:
+        kw_args_darray = {}
     # Set image metadata
     if "meta" in kw_args_image.keys():
-        meta_dict = kw_args_image["meta"].metadata
-        meta_dict.update({"AnatomicalStructurePrimary": structure})
+        if isinstance(kw_args_image["meta"], dict):
+            gifti_meta = kw_args_image["meta"]
+            gifti_meta.update({"AnatomicalStructurePrimary": structure})
+        else:
+            raise ValueError("Item 'meta' in argument kw_args_image should be a dict.")
     else:
-        meta_dict = {"AnatomicalStructurePrimary": structure}
-    kw_args_image["meta"] = nib.gifti.gifti.GiftiMetaData().from_dict(meta_dict)
+        gifti_meta = {"AnatomicalStructurePrimary": structure}
+    kw_args_image["meta"] = nib.gifti.gifti.GiftiMetaData(gifti_meta)
     # Initialize GIFTI image object
     img = nib.gifti.gifti.GiftiImage(**kw_args_image)
     # Add data array
@@ -74,8 +83,8 @@ def make_gifti_label_image(
     data: Union[np.ndarray, list[np.ndarray]],
     structure: str,
     label: dict[str, dict[str, Union[str, int, float]]],
-    kw_args_image: dict[str, Any] = {},
-    kw_args_darray: dict[str, Any] = {},
+    kw_args_image: Optional[dict[str, Any]] = None,
+    kw_args_darray: Optional[dict[str, Any]] = None,
 ) -> nib.gifti.gifti.GiftiImage:
     """
     Makes GIFTI label image.
@@ -89,11 +98,13 @@ def make_gifti_label_image(
             the format of {label_name: {key:key, red:value, green:value,
             blue:value, alpha:value}}.
         kw_args_image: Additional keyword arguments pass to nibabel
-            GiftiImage class. Image metadata should be stored in an item
-            which key is 'meta'.
+            GiftiImage class. It should be a dict contains valid keyword
+            arguments in class GiftiImage as keys. Image metadata should
+            be stored in an item which key is 'meta'.
         kw_args_darray: Additional keyword arguments pass to nibabel
-            GiftiDataArray class. Data array metadata should be stored
-            in an item which key is 'meta'.
+            GiftiDataArray class. It should be a dict contains valid
+            keyword arguments in class GiftiDataArray as keys.Data array
+            metadata should be stored in an item which key is 'meta'.
 
     Returns:
         A nib.gifti.gifti.GiftiImage object.
@@ -101,13 +112,20 @@ def make_gifti_label_image(
 
     # Conform input
     data = [data] if not isinstance(data, list) else data
+    if kw_args_image is None:
+        kw_args_image = {}
+    if kw_args_darray is None:
+        kw_args_darray = {}
     # Set image metadata
     if "meta" in kw_args_image.keys():
-        meta_dict = kw_args_image["meta"].metadata
-        meta_dict.update({"AnatomicalStructurePrimary": structure})
+        if isinstance(kw_args_image["meta"], dict):
+            gifti_meta = kw_args_image["meta"]
+            gifti_meta.update({"AnatomicalStructurePrimary": structure})
+        else:
+            raise ValueError("Item 'meta' in argument kw_args_image should be a dict.")
     else:
-        meta_dict = {"AnatomicalStructurePrimary": structure}
-    kw_args_image["meta"] = nib.gifti.gifti.GiftiMetaData().from_dict(meta_dict)
+        gifti_meta = {"AnatomicalStructurePrimary": structure}
+    kw_args_image["meta"] = nib.gifti.gifti.GiftiMetaData(gifti_meta)
     # Initialize GIFTI image object
     img = nib.gifti.gifti.GiftiImage(**kw_args_image)
     # Set LabelTable
