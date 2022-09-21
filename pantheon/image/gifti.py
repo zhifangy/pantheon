@@ -16,6 +16,32 @@ from ..utils.shell import run_cmd
 from ..utils.typing import PathLike
 
 
+##################
+# Read GIFTI image
+##################
+
+
+def read_geometry_surface(
+    in_file: Union[PathLike, list[PathLike]]
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Reads GIFTI surface geometry file.
+
+    Args:
+        in_file: A surface geometry file in GIFTI format.
+
+    Returns:
+        A tuple (coords, faces), where coords is the vertex coordinates
+        (N x 3) and faces is the vertex indices of surface faces
+        (triangles, M x 3).
+    """
+
+    img = nib.load(in_file)
+    coords = img.get_arrays_from_intent("NIFTI_INTENT_POINTSET")[0].data
+    faces = img.get_arrays_from_intent("NIFTI_INTENT_TRIANGLE")[0].data
+    return (coords, faces)
+
+
 ####################
 # Create GIFTI image
 ####################
