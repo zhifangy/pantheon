@@ -344,3 +344,88 @@ def add_polynomial(
         raise TypeError("Argument 'confounds' should be a DataFrame or numpy array.")
 
     return X
+
+
+def add_outlier_regressor(
+    df: pd.DataFrame,
+    fd_thresh: Optional[float] = 0.5,
+    enorm_thresh: Optional[float] = 0.2,
+    extra_censor: np.ndarray = None,
+    censor_prev_tr: bool = False,
+    print_summary: bool = True,
+) -> pd.DataFrame:
+    """Add outlier regressors to confounds based on motion parameters.
+
+    Args:
+        df: Confounds dataframe.
+        fd_thresh: Framewise displacement threshold. TRs exceed this are
+            marked as outlier.
+        enorm_thresh: Eucilidean norm threshold. TRs exceed this are
+            marked as outlier.
+        extra_censor: Extra censor information. It should be a numpy
+            array contrain only 1 and 0. The 1s mark the vaild TRs and
+            the 0s mark the outliers. The length of the array should
+            match the number of rows of df.
+        censor_pre_tr: If true, also mark the the time point before a
+            ouitlier TR as outlier.
+        print_summary: If true, print out the number of outliers for
+            each category.
+
+    Returns:
+        A DataFrame contains columns of input confounds and one-hot
+        encoded outlier regressors.
+    """
+
+    col_name = []
+    regressor = []
+    # Censor TR based on Framewise displacement (L1 norm)
+    if fd_thresh:
+        fd = df["framewise_displacement"].to_numpy()
+        fd = np.nan_to_num(fd, nan=0)
+        valid = np.where(fd > fd_thresh, 0, 1)
+        # also censor previous TR when a TR is marked as bad
+        if censor_prev_tr:
+            valid[:-1] = valid[:-1] * valid[1:]
+        outlier = np.where(valid == 0)[0]
+        # make one-hot outlier regressors
+        for i, loc in enumerate(outlier):
+            regressor.append(np.zeros((df.shape[0], 1), dtype=int))
+            regressor[-1][loc, 0] = 1
+            col_name.append(f"fd_outlier{i+1}")
+        if print_summary:
+            print(
+                f"Total number of framewise displacement outliers: {outlier.shape[0]}", flush=True
+            )
+    # Censor TR based on Euclidean Norm (L2 norm)
+    if enorm_thresh:
+        enorm = calc_motion_enorm(df)
+        valid = np.where(enorm > enorm_thresh, 0, 1)
+        # also censor previous TR when a TR is marked as bad
+        if censor_prev_tr:
+            valid[:-1] = valid[:-1] * valid[1:]
+        outlier = np.where(valid == 0)[0]
+        # make one-hot outlier regressors
+        for i, loc in enumerate(outlier):
+            regressor.append(np.zeros((df.shape[0], 1), dtype=int))
+            regressor[-1][loc, 0] = 1
+            col_name.append(f"enorm_outlier{i+1}")
+        if print_summary:
+            print(f"Total number of enorm outliers: {outlier.shape[0]}", flush=True)
+    # Extra censor from external source
+    if not extra_censor is None:
+        # also censor previous TR when a TR is marked as bad
+        if censor_prev_tr:
+            extra_censor[:-1] = extra_censor[:-1] * extra_censor[1:]
+        outlier = np.where(extra_censor == 0)[0]
+        # make one-hot outlier regressors
+        for i, loc in enumerate(outlier):
+            regressor.append(np.zeros((df.shape[0], 1), dtype=int))
+            regressor[-1][loc, 0] = 1
+            col_name.append(f"extra_outlier{i+1}")
+        if print_summary:
+            print(f"Total number of extra outliers: {outlier.shape[0]}", flush=True)
+    # Add outlier regressors to df
+    if len(col_name) > 0:
+        outlier_regressor = pd.DataFrame(np.hstack(regressor), index=df.index, columns=col_name)
+        df = pd.concat([df, outlier_regressor], axis=1)
+    return df
